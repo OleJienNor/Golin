@@ -1,0 +1,52 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  fork:
+    branches: [ "master" ]
+
+jobs:
+  buildAndDeploy:
+    runs-on:  ubuntu-latest
+    # 交叉构建,多平台交叉编译
+    strategy:
+      matrix:
+        include:
+          - goarch: amd64
+            goos: linux
+          - goarch: amd64
+            goos: windows
+    # 使用checkout
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with: 
+        go-version: '>=1.16.0'
+    - run: go version
+    - name: make
+      run: make
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }} 
+
+    - name: Packaging...
+      run: tar czf golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz golin
+    - name: Uploading assets...
+    #   if: ${{ !env.ACT }}
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GOACTION }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+        asset_name: golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+        asset_content_type: application/gzip
+
