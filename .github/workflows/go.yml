@@ -37,7 +37,7 @@ jobs:
         GOARCH: ${{ matrix.goarch }} 
 
     - name: Packaging...
-      run: tar czf golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz golin
+      run: tar czf nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz nodeUpgrade
     - name: Uploading assets...
     #   if: ${{ !env.ACT }}
       id: upload-release-asset 
@@ -46,7 +46,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GOACTION }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
-        asset_name: golin-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+        asset_path: ./nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+        asset_name: nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
         asset_content_type: application/gzip
 
