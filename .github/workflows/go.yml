@@ -1,19 +1,17 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: Publish Go Binary
 
-name: Go
-
+# 触发条件：在 push 到 master 分支后
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  fork:
-    branches: [ "master" ]
-
+    branches:
+      - master
+env:
+  GITHUB_TOKEN: ${{ secrets.goaction }}      
 jobs:
   buildAndDeploy:
     runs-on:  ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # 交叉构建,多平台交叉编译
     strategy:
       matrix:
@@ -34,19 +32,29 @@ jobs:
       run: make
       env:
         GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }} 
-
+        GOARCH: ${{ matrix.goarch }}            
     - name: Packaging...
       run: tar czf nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz nodeUpgrade
-    - name: Uploading assets...
-    #   if: ${{ !env.ACT }}
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GOACTION }}
+    - name: Get version
+      id: version
+      run: echo "::set-output name=version::$(git rev-parse --short HEAD)"
+    - name: Gets latest created release info
+      uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
-        asset_name: nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
-        asset_content_type: application/gzip
-
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag:  ${{ steps.version.outputs.version }}
+          prerelease: true
+          title: "Development Build"
+          files: |
+            ./nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz              
+#     - name: Uploading assets...
+#       # if: ${{ !env.ACT }}
+#       # id: upload-release-asset 
+#       uses: actions/upload-release-asset@v1
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GOACTION }}
+#       with:
+#         upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
+#         asset_path: ./nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+#         asset_name: nodeUpgrade-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+#         asset_content_type: application/gzip
